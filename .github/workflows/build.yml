@@ -101,7 +101,7 @@ jobs:
             - name: Run Local Node
               run: |
                   cd local-node
-                  npm run ci
+                  npm ci
                   npm run start -- -d --network local --verbose=trace
 
             - name: Run Unit and Integration Tests
@@ -175,7 +175,7 @@ jobs:
             - name: Run Local Node
               run: |
                   cd local-node
-                  npm run ci
+                  npm ci
                   npm run start -- -d --network local --verbose=trace
 
             - name: Prepare .env for Examples
@@ -230,7 +230,7 @@ jobs:
             - name: Run Local Node
               run: |
                   cd local-node
-                  npm run ci
+                  npm ci
                   npm run start -- -d --network local --verbose=trace
 
             - name: Run TCK Unit Tests
