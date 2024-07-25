@@ -1,212 +1,212 @@
 name: PR Checks
 
 on:
-  push:
-    branches:
-      - main
-      - develop
-      - release/*
-  pull_request:
-    branches:
-      - main
-      - develop
-      - release/*
+    push:
+        branches:
+            - main
+            - develop
+            - release/*
+    pull_request:
+        branches:
+            - main
+            - develop
+            - release/*
 
 defaults:
-  run:
-    shell: bash
+    run:
+        shell: bash
 
 permissions:
-  contents: read
-  packages: write
+    contents: read
+    packages: write
 
 env:
-  LC_ALL: C.UTF-8
-  GRADLE_CACHE_USERNAME: ${{ secrets.GRADLE_CACHE_USERNAME }}
-  GRADLE_CACHE_PASSWORD: ${{ secrets.GRADLE_CACHE_PASSWORD }}
+    LC_ALL: C.UTF-8
+    GRADLE_CACHE_USERNAME: ${{ secrets.GRADLE_CACHE_USERNAME }}
+    GRADLE_CACHE_PASSWORD: ${{ secrets.GRADLE_CACHE_PASSWORD }}
 
 jobs:
-  build:
-    name: Build
-    runs-on: [ self-hosted, Linux, medium, ephemeral ]
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
-        with:
-          egress-policy: audit
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Harden Runner
+              uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+              with:
+                  egress-policy: audit
 
-      - name: Checkout Code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+            - name: Checkout Code
+              uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Setup Java
-        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
-        with:
-          distribution: temurin
-          java-version: 17
+            - name: Setup Java
+              uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+              with:
+                  distribution: temurin
+                  java-version: 17
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
-        with:
-          cache-read-only: false
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+              with:
+                  cache-read-only: false
 
-      - name: Build SDK & Javadoc
-        run: ./gradlew assemble :sdk:javadoc --scan
+            - name: Build SDK & Javadoc
+              run: ./gradlew assemble :sdk:javadoc --scan
 
-  test:
-    name: Unit and Integration Tests
-    runs-on: [ self-hosted, Linux, medium, ephemeral ]
-    needs:
-      - build
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
-        with:
-          egress-policy: audit
+    test:
+        name: Unit and Integration Tests
+        runs-on: ubuntu-latest
+        needs:
+            - build
+        steps:
+            - name: Harden Runner
+              uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+              with:
+                  egress-policy: audit
 
-      - name: Checkout Code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+            - name: Checkout Code
+              uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+              with:
+                  fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
-        with:
-          node-version: 18
+            - name: Setup NodeJS
+              uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+              with:
+                  node-version: 18
 
-      - name: Setup Java
-        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
-        with:
-          distribution: temurin
-          java-version: 17
+            - name: Setup Java
+              uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+              with:
+                  distribution: temurin
+                  java-version: 17
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
 
-      - name: Install Local Node
-        run: npm install @hashgraph/hedera-local
+            - name: Install Local Node
+              run: npm install @hashgraph/hedera-local
 
-      - name: Build SDK
-        run: ./gradlew assemble --scan
+            - name: Build SDK
+              run: ./gradlew assemble --scan
 
-      - name: Gradle Dependency Scopes Check
-        run: ./gradlew checkAllModuleInfo --continue --scan
+            - name: Gradle Dependency Scopes Check
+              run: ./gradlew checkAllModuleInfo --continue --scan
 
-      - name: Start Local Node
-        run: npx @hashgraph/hedera-local start -d --network local
+            - name: Start Local Node
+              run: npx @hashgraph/hedera-local start -d --network local
 
-      - name: Run Unit and Integration Tests
-        env:
-          OPERATOR_KEY: '0xa608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4'
-          OPERATOR_ID: '0.0.1022'
-          HEDERA_NETWORK: 'localhost'
-        run: |
-          ./gradlew -POPERATOR_ID=$OPERATOR_ID -POPERATOR_KEY=$OPERATOR_KEY -PHEDERA_NETWORK=$HEDERA_NETWORK jacocoTestReport --scan
+            - name: Run Unit and Integration Tests
+              env:
+                  OPERATOR_KEY: "0xa608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4"
+                  OPERATOR_ID: "0.0.1022"
+                  HEDERA_NETWORK: "localhost"
+              run: |
+                  ./gradlew -POPERATOR_ID=$OPERATOR_ID -POPERATOR_KEY=$OPERATOR_KEY -PHEDERA_NETWORK=$HEDERA_NETWORK jacocoTestReport --scan
 
-      - name: Sonar Scan
-        if: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonarqube --info --scan
+            - name: Sonar Scan
+              if: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+              run: ./gradlew sonarqube --info --scan
 
-      - name: Upload coverage to Codecov
-        if: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
-        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
+            - name: Upload coverage to Codecov
+              if: ${{ github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
+              uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
 
-      - name: Stop the local node
-        run: npx @hashgraph/hedera-local stop
+            - name: Stop the local node
+              run: npx @hashgraph/hedera-local stop
 
-  run-examples:
-    name: Run Examples
-    runs-on: [ self-hosted, Linux, medium, ephemeral ]
-    needs:
-      - build
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
-        with:
-          egress-policy: audit
+    run-examples:
+        name: Run Examples
+        runs-on: ubuntu-latest
+        needs:
+            - build
+        steps:
+            - name: Harden Runner
+              uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+              with:
+                  egress-policy: audit
 
-      - name: Checkout Code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+            - name: Checkout Code
+              uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
-      - name: Setup NodeJS
-        uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
-        with:
-          node-version: 18
+            - name: Setup NodeJS
+              uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+              with:
+                  node-version: 18
 
-      - name: Setup Java
-        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
-        with:
-          distribution: temurin
-          java-version: 17
+            - name: Setup Java
+              uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+              with:
+                  distribution: temurin
+                  java-version: 17
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@00854ea68c109d98c75d956347303bf7c45b0277 # v3.2.1
+            - name: Setup Android SDK
+              uses: android-actions/setup-android@00854ea68c109d98c75d956347303bf7c45b0277 # v3.2.1
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
 
-      - name: Install Local Node
-        run: npm install @hashgraph/hedera-local
+            - name: Install Local Node
+              run: npm install @hashgraph/hedera-local
 
-      - name: Build SDK
-        run: ./gradlew assemble --scan
+            - name: Build SDK
+              run: ./gradlew assemble --scan
 
-      - name: Build Android Example
-        run: ./gradlew -p example-android assemble --scan
+            - name: Build Android Example
+              run: ./gradlew -p example-android assemble --scan
 
-      - name: Start the local node
-        run: npx @hashgraph/hedera-local start -d --network local
+            - name: Start the local node
+              run: npx @hashgraph/hedera-local start -d --network local
 
-      - name: Prepare .env for Examples
-        run: |
-          echo "OPERATOR_KEY=0xa608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" > examples/.env
-          echo "OPERATOR_ID=0.0.1022" >> examples/.env
-          echo "HEDERA_NETWORK=localhost" >> examples/.env
+            - name: Prepare .env for Examples
+              run: |
+                  echo "OPERATOR_KEY=0xa608e2130a0a3cb34f86e757303c862bee353d9ab77ba4387ec084f881d420d4" > examples/.env
+                  echo "OPERATOR_ID=0.0.1022" >> examples/.env
+                  echo "HEDERA_NETWORK=localhost" >> examples/.env
 
-      - name: Run Examples
-        run: ./gradlew :examples:runAllExamples --scan
+            - name: Run Examples
+              run: ./gradlew :examples:runAllExamples --scan
 
-      - name: Stop the local node
-        run: npx @hashgraph/hedera-local stop
+            - name: Stop the local node
+              run: npx @hashgraph/hedera-local stop
 
-  test-tck:
-      name: TCK Tests
-      runs-on: [ self-hosted, Linux, medium, ephemeral ]
-      needs:
-          - build
-      steps:
-          - name: Checkout Code
-            uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-            with:
-                fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+    test-tck:
+        name: TCK Tests
+        runs-on: ubuntu-latest
+        needs:
+            - build
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+              with:
+                  fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-          - name: Setup NodeJS
-            uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
-            with:
-                node-version: 18
+            - name: Setup NodeJS
+              uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
+              with:
+                  node-version: 18
 
-          - name: Setup Java
-            uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
-            with:
-                distribution: temurin
-                java-version: 17
+            - name: Setup Java
+              uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4.2.1
+              with:
+                  distribution: temurin
+                  java-version: 17
 
-          - name: Setup Gradle
-            uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
 
-          - name: Install Local Node
-            run: npm install @hashgraph/hedera-local
+            - name: Install Local Node
+              run: npm install @hashgraph/hedera-local
 
-          - name: Build TCK
-            run: ./gradlew assemble --scan
+            - name: Build TCK
+              run: ./gradlew assemble --scan
 
-          - name: Start Local Node
-            run: npx @hashgraph/hedera-local start -d --network local
+            - name: Start Local Node
+              run: npx @hashgraph/hedera-local start -d --network local
 
-          - name: Run TCK Unit Tests
-            run: ./gradlew :tck:test
+            - name: Run TCK Unit Tests
+              run: ./gradlew :tck:test
 
-          - name: Stop the local node
-            run: npx @hashgraph/hedera-local stop
+            - name: Stop the local node
+              run: npx @hashgraph/hedera-local stop
