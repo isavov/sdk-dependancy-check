@@ -1,10 +1,11 @@
 version: 2
 updates:
 - package-ecosystem: gradle
-  directory: "/"
+  directory: "/sdk-dependency-versions"
   schedule:
     interval: weekly
   open-pull-requests-limit: 10
+
 - package-ecosystem: gradle
   directory: "/gradle/plugins"
   schedule:
